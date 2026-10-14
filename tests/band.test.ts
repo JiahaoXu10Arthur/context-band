@@ -1,10 +1,14 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On, RenderElement, SessionMeasureInput } from 'claude-code'
 
+// 2026-10-14 22:30 local, as the mock clock's now.
+const NOW = new Date(2026, 9, 14, 22, 30).getTime()
+const HOUR = 3_600_000
+
 const USAGE = JSON.stringify({
   limits: [
     { kind: 'session', percent: 17, scope: null },
-    { kind: 'weekly_scoped', percent: 35, scope: { model: { id: null, display_name: 'Fable' } } },
+    { kind: 'weekly_scoped', percent: 35, resets_at: new Date(NOW + 6 * 24 * HOUR + 4 * HOUR).toISOString(), scope: { model: { id: null, display_name: 'Fable' } } },
   ],
 })
 
@@ -13,13 +17,10 @@ const BAND = {
   props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 120, scroll: { offset: 0, bodyRows: 1 }, view: {} },
 } as const
 
-// 2026-10-14 22:30 local, as the mock clock's now.
-const NOW = new Date(2026, 9, 14, 22, 30).getTime()
-const HOUR = 3_600_000
 
-function subscribed(on: On) {
+function subscribed(on: On, usage = USAGE) {
   on('session.authorize', () => ({ value: { handle: 'h', kind: 'bearer' } }))
-  on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: USAGE } }))
+  on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text: usage } }))
   on('session.measure', (_$, e) => ({ changed: e.changed }))
   mock.clock(on, { now: NOW })
 }
@@ -41,7 +42,7 @@ test('by default the band shows context, plan windows with their resets, and per
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ plugin: 'context-band', surface, ...BAND })
     const line = await ui.find({ type: 'Text' })
-    expect(line?.text).toBe('Context 14% · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35%')
+    expect(line?.text).toBe('Context 14% · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35% (6d 4hr)')
     await ui.unmount()
   }
 })
@@ -86,7 +87,7 @@ test('with every part on the band shows them all in order', { options: ALL_ON },
 
   const ui = await $.ui.mount({ plugin: 'context-band', surface: 'terminal', ...BAND })
   expect((await ui.find({ type: 'Text' }))?.text).toBe(
-    'Fable 5.1 · context-band (main) · Context 14% (140k/1M) · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35% · $1.23 · 12 turns · Elapsed 1hr 15m · 22:30',
+    'Fable 5.1 · context-band (main) · Context 14% (140k/1M) · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35% (6d 4hr) · $1.23 · 12 turns · Elapsed 1hr 15m · 22:30',
   )
 })
 
@@ -146,13 +147,13 @@ test('a failed usage request keeps the last per-model reading and is retried aft
   await $.session.measure(READING)
   const ui = await $.ui.mount({ plugin: 'context-band', surface: 'desktop', ...BAND })
   const line = async () => (await ui.find({ type: 'Text' }))?.text
-  expect(await line()).toBe('Context 14% · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35%')
+  expect(await line()).toBe('Context 14% · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35% (6d 4hr)')
   expect(calls).toBe(1)
 
   await clock.advance(5 * 60_000)
   await $.session.measure(READING)
   expect(calls).toBe(2)
-  expect(await line()).toBe('Context 14% · Session 17% (2hr 10m) · Weekly 31% (3d 4hr) · Fable 35%')
+  expect(await line()).toBe('Context 14% · Session 17% (2hr 10m) · Weekly 31% (3d 4hr) · Fable 35% (6d 3hr)')
 
   await clock.advance(30_000)
   await $.session.measure(READING)
@@ -161,9 +162,46 @@ test('a failed usage request keeps the last per-model reading and is retried aft
   await clock.advance(30_000)
   await $.session.measure(READING)
   expect(calls).toBe(3)
-  expect(await line()).toBe('Context 14% · Session 17% (2hr 9m) · Weekly 31% (3d 4hr) · Fable 40%')
+  expect(await line()).toBe('Context 14% · Session 17% (2hr 9m) · Weekly 31% (3d 4hr) · Fable 40% (6d 3hr)')
 
   await clock.advance(60_000)
   await $.session.measure(READING)
   expect(calls).toBe(3)
+})
+
+const BUSY: SessionMeasureInput = {
+  ...READING,
+  rateLimits: [
+    { kind: 'five_hour', percentUsed: 72, resetsAt: READING.rateLimits[0]!.resetsAt },
+    { kind: 'seven_day', percentUsed: 31, resetsAt: READING.rateLimits[1]!.resetsAt },
+  ],
+}
+const BUSY_USAGE = USAGE.replace('"percent":35', '"percent":93')
+
+async function colors($: Parameters<Parameters<typeof test>[1]>[0]) {
+  const ui = await $.ui.mount({ plugin: 'context-band', surface: 'terminal', ...BAND })
+  const texts = await ui.findAll({ type: 'Text' })
+  return texts.slice(1).map(t => [t.text, t.props.color])
+}
+
+test('by default a figure at 70% turns to the warning color and one at 90% to the error color', async ($, on) => {
+  subscribed(on, BUSY_USAGE)
+  await $.session.measure(BUSY)
+  expect(await colors($)).toEqual([
+    ['Context 14%', 'subtle'],
+    ['Session 72% (2hr 15m)', 'warning'],
+    ['Weekly 31% (3d 5hr)', 'subtle'],
+    ['Fable 93% (6d 4hr)', 'error'],
+  ])
+})
+
+test('the colors and the percentages they start at are options', { options: { color: 'cyan', warnAt: 30, warnColor: 'yellow', highAt: 50, highColor: 'red' } }, async ($, on) => {
+  subscribed(on, BUSY_USAGE)
+  await $.session.measure(BUSY)
+  expect(await colors($)).toEqual([
+    ['Context 14%', 'cyan'],
+    ['Session 72% (2hr 15m)', 'red'],
+    ['Weekly 31% (3d 5hr)', 'yellow'],
+    ['Fable 93% (6d 4hr)', 'red'],
+  ])
 })

@@ -34,8 +34,29 @@ function showing(options: PluginOptions): Show {
   return show
 }
 
+// The line's colors: the base one, and the two a figure turns to at and
+// above the warn and high percentages.
+type Style = { color: string; warnAt: number; warnColor: string; highAt: number; highColor: string }
+
+function styling(options: PluginOptions): Style {
+  return {
+    color: String(options.color),
+    warnAt: Number(options.warnAt),
+    warnColor: String(options.warnColor),
+    highAt: Number(options.highAt),
+    highColor: String(options.highColor),
+  }
+}
+
+function tone(percent: number | null, style: Style): string {
+  if (percent === null) return style.color
+  if (percent >= style.highAt) return style.highColor
+  if (percent >= style.warnAt) return style.warnColor
+  return style.color
+}
+
 type UsageBody = {
-  limits?: { percent: number; scope: { model: { display_name: string } | null } | null }[]
+  limits?: { percent: number; resets_at?: string | null; scope: { model: { display_name: string } | null } | null }[]
 }
 
 // Per-model weekly windows come only from the OAuth usage endpoint, as the
@@ -50,7 +71,7 @@ async function modelWindows($: EngineInterface): Promise<Figures['models'] | nul
     if (!r.ok) return null
     const body = JSON.parse(r.text) as UsageBody
     return (body.limits ?? []).flatMap(l =>
-      l.scope?.model ? [{ name: l.scope.model.display_name, percentUsed: l.percent }] : [],
+      l.scope?.model ? [{ name: l.scope.model.display_name, percentUsed: l.percent, resetsAt: l.resets_at ?? null }] : [],
     )
   } catch {
     return null
@@ -157,33 +178,42 @@ function clock(now: number): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-function line(f: Figures, show: Show): string[] {
-  const parts: string[] = []
-  if (show.model && f.model !== null) parts.push(f.model)
-  if (show.folder && f.folder !== null) parts.push(show.branch && f.branch !== null ? `${f.folder} (${f.branch})` : f.folder)
-  else if (show.branch && f.branch !== null) parts.push(f.branch)
+type Piece = { text: string; percent: number | null }
+
+function line(f: Figures, show: Show): Piece[] {
+  const parts: Piece[] = []
+  const plain = (text: string) => parts.push({ text, percent: null })
+  if (show.model && f.model !== null) plain(f.model)
+  if (show.folder && f.folder !== null) plain(show.branch && f.branch !== null ? `${f.folder} (${f.branch})` : f.folder)
+  else if (show.branch && f.branch !== null) plain(f.branch)
   if (show.context) {
     const pct = f.context.percent === null ? '--' : `${f.context.percent}%`
     const size = show.tokens && f.context.tokens !== null && f.context.window !== null
       ? ` (${tokens(f.context.tokens)}/${tokens(f.context.window)})`
       : ''
-    parts.push(`Context ${pct}${size}`)
+    parts.push({ text: `Context ${pct}${size}`, percent: f.context.percent })
   }
   for (const l of f.limits) {
     if ((l.kind === 'five_hour' && !show.session) || (l.kind === 'seven_day' && !show.weekly)) continue
     const reset = show.resets ? until(l.resetsAt, f.now) : null
-    parts.push(`${LABELS[l.kind] ?? l.kind} ${l.percentUsed}%${reset === null ? '' : ` (${reset})`}`)
+    parts.push({ text: `${LABELS[l.kind] ?? l.kind} ${l.percentUsed}%${reset === null ? '' : ` (${reset})`}`, percent: l.percentUsed })
   }
-  if (show.models) for (const m of f.models) parts.push(`${m.name} ${m.percentUsed}%`)
-  if (show.cost && f.costUsd !== null) parts.push(`$${f.costUsd.toFixed(2)}`)
-  if (show.turns && f.turns !== null) parts.push(`${f.turns} ${f.turns === 1 ? 'turn' : 'turns'}`)
-  if (show.duration && f.startedAt !== null) parts.push(`Elapsed ${span(f.now - f.startedAt)}`)
-  if (show.clock) parts.push(clock(f.now))
+  if (show.models) {
+    for (const m of f.models) {
+      const reset = show.resets ? until(m.resetsAt, f.now) : null
+      parts.push({ text: `${m.name} ${m.percentUsed}%${reset === null ? '' : ` (${reset})`}`, percent: m.percentUsed })
+    }
+  }
+  if (show.cost && f.costUsd !== null) plain(`$${f.costUsd.toFixed(2)}`)
+  if (show.turns && f.turns !== null) plain(`${f.turns} ${f.turns === 1 ? 'turn' : 'turns'}`)
+  if (show.duration && f.startedAt !== null) plain(`Elapsed ${span(f.now - f.startedAt)}`)
+  if (show.clock) plain(clock(f.now))
   return parts
 }
 
 export const register: Register = (on, options) => {
   const show = showing(options)
+  const style = styling(options)
 
   on('session.start', async ($, e, next) => {
     await measure($, show, await $.session.usage())
@@ -210,7 +240,9 @@ export const register: Register = (on, options) => {
     const { Box, Text } = $.ui.resolve(e)
     return (
       <Box>
-        <Text dimColor>{parts.join(' · ')}</Text>
+        <Text color={style.color}>
+          {parts.map((p, i) => [i === 0 ? '' : ' · ', <Text color={tone(p.percent, style)}>{p.text}</Text>])}
+        </Text>
       </Box>
     )
   })

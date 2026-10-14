@@ -8,7 +8,7 @@ Out of the box it shows:
 
 - `Context`: how full the session's context window is
 - `Session` / `Weekly`: the plan's 5-hour and 7-day rate-limit windows, each with the time until it resets, like `Session 39% (2hr 33m)`
-- one entry per model-scoped weekly window the account has (`Fable` here)
+- one entry per model-scoped weekly window the account has (`Fable` here), with its reset countdown too
 
 The figures refresh after every turn. With an API key, Bedrock, Vertex or a gateway there are no plan windows, and the line shows `Context` alone.
 
@@ -44,7 +44,7 @@ Every part of the line is a switch. Open `/config` and look for the rows under `
 | Context tokens | `(54k/200k)` after the context percentage | off |
 | 5-hour window | `Session 25%` | on |
 | 7-day window | `Weekly 33%` | on |
-| Reset countdowns | `(2hr 15m)` after each window | on |
+| Reset countdowns | `(2hr 15m)` after each window, per-model ones included | on |
 | Per-model windows | `Fable 36%`, one per model-scoped window | on |
 | Session cost | `$1.23`, as `/cost` totals it | off |
 | Turn count | `12 turns` | off |
@@ -52,6 +52,20 @@ Every part of the line is a switch. Open `/config` and look for the rows under `
 | Clock | `22:30`, refreshed every minute | off |
 
 With every switch off the mod draws nothing. The switches are stored in `~/.claude/settings.json` under `pluginConfigs`, so they can be edited there too.
+
+## Colors
+
+Each figure is colored by how full it is. Five more rows under `context-band` in `/config` set this:
+
+| Row | Default | Meaning |
+| --- | --- | --- |
+| Color | `subtle` | the line's color below the warn percentage |
+| Warn at (%) | 70 | a figure at or above this turns to the warn color |
+| Warn color | `warning` | |
+| High at (%) | 90 | a figure at or above this turns to the high color |
+| High color | `error` | |
+
+The colors `subtle`, `text`, `claude`, `warning` and `error` are theme keys and follow the light or dark theme; `blue`, `cyan`, `green`, `magenta`, `yellow`, `red`, `white` and `gray` are the terminal's own. With the defaults, `Context 18% · Session 72% (2hr 26m) · Weekly 36% (6d 3hr) · Fable 93% (6d 3hr)` draws Session in the warning color, Fable in the error color and the rest subtle.
 
 ## Caveats
 

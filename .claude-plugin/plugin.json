@@ -1,7 +1,7 @@
 {
   "name": "context-band",
-  "version": "0.2.4",
-  "description": "One line above the prompt: context window fill, plan rate-limit windows, per-model weekly windows and other session figures, each one a toggle in /config",
+  "version": "0.3.0",
+  "description": "One line above the prompt: context window fill, plan rate-limit windows, per-model weekly windows and other session figures, each one a toggle in /config, colored by how full they are",
   "author": { "name": "Jiahao Xu" },
   "types": "./types/index.d.ts",
   "userConfig": {
@@ -82,6 +82,77 @@
       "title": "Clock",
       "description": "The current time as HH:MM, refreshed every minute",
       "default": false
+    },
+    "color": {
+      "type": "string",
+      "title": "Color",
+      "description": "The line's color: a theme key (subtle, text, claude follow the light/dark theme) or a terminal color",
+      "options": [
+        "subtle",
+        "text",
+        "claude",
+        "blue",
+        "cyan",
+        "green",
+        "magenta",
+        "yellow",
+        "red",
+        "white",
+        "gray"
+      ],
+      "default": "subtle"
+    },
+    "warnAt": {
+      "type": "number",
+      "title": "Warn at (%)",
+      "description": "A figure at or above this percentage is drawn in the warn color",
+      "default": 70
+    },
+    "warnColor": {
+      "type": "string",
+      "title": "Warn color",
+      "description": "The color of a figure at or above the warn percentage",
+      "options": [
+        "warning",
+        "subtle",
+        "text",
+        "claude",
+        "blue",
+        "cyan",
+        "green",
+        "magenta",
+        "yellow",
+        "red",
+        "white",
+        "gray"
+      ],
+      "default": "warning"
+    },
+    "highAt": {
+      "type": "number",
+      "title": "High at (%)",
+      "description": "A figure at or above this percentage is drawn in the high color",
+      "default": 90
+    },
+    "highColor": {
+      "type": "string",
+      "title": "High color",
+      "description": "The color of a figure at or above the high percentage",
+      "options": [
+        "error",
+        "subtle",
+        "text",
+        "claude",
+        "blue",
+        "cyan",
+        "green",
+        "magenta",
+        "yellow",
+        "red",
+        "white",
+        "gray"
+      ],
+      "default": "error"
     }
   }
 }

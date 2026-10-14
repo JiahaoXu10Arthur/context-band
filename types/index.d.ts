@@ -5,7 +5,7 @@ export type Figures = {
   startedAt: number | null
   context: { percent: number | null; tokens: number | null; window: number | null }
   limits: { kind: string; percentUsed: number; resetsAt: string | null }[]
-  models: { name: string; percentUsed: number }[]
+  models: { name: string; percentUsed: number; resetsAt: string | null }[]
   costUsd: number | null
   turns: number | null
   model: string | null
