@@ -41,7 +41,7 @@ test('by default the band shows context, plan windows with their resets, and per
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ plugin: 'context-band', surface, ...BAND })
     const line = await ui.find({ type: 'Text' })
-    expect(line?.text).toBe('context 14% · session 17% (2hr 15m) · weekly 31% (3d 5hr) · Fable 35%')
+    expect(line?.text).toBe('Context 14% · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35%')
     await ui.unmount()
   }
 })
@@ -59,7 +59,7 @@ test('without a first-party credential the band shows the context alone', async 
   })
 
   const ui = await $.ui.mount({ plugin: 'context-band', surface: 'desktop', ...BAND })
-  expect((await ui.find({ type: 'Text' }))?.text).toBe('context 25%')
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Context 25%')
 })
 
 const ALL_ON = Object.fromEntries(
@@ -86,7 +86,7 @@ test('with every part on the band shows them all in order', { options: ALL_ON },
 
   const ui = await $.ui.mount({ plugin: 'context-band', surface: 'terminal', ...BAND })
   expect((await ui.find({ type: 'Text' }))?.text).toBe(
-    'Fable 5.1 · context-band (main) · context 14% (140k/1M) · session 17% (2hr 15m) · weekly 31% (3d 5hr) · Fable 35% · $1.23 · 12 turns · elapsed 1hr 15m · 22:30',
+    'Fable 5.1 · context-band (main) · Context 14% (140k/1M) · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35% · $1.23 · 12 turns · Elapsed 1hr 15m · 22:30',
   )
 })
 
@@ -116,7 +116,7 @@ test('parts switched off leave the line, and the usage endpoint is not called wi
   await $.session.measure(READING)
 
   const ui = await $.ui.mount({ plugin: 'context-band', surface: 'desktop', ...BAND })
-  expect((await ui.find({ type: 'Text' }))?.text).toBe('context 14% · weekly 31% · $1.23')
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Context 14% · Weekly 31% · $1.23')
 })
 
 test('with every part off the band leaves the drawing to the engine', { options: { context: false, session: false, weekly: false, resets: false, models: false } }, async ($, on) => {

@@ -12,7 +12,7 @@ import type { Figures } from '../types'
 
 const figures = atom({ plugin: 'context-band', key: 'figures' } as const, null)
 
-const LABELS: Record<string, string> = { five_hour: 'session', seven_day: 'weekly' }
+const LABELS: Record<string, string> = { five_hour: 'Session', seven_day: 'Weekly' }
 const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 const MINUTE = 60_000
 
@@ -149,7 +149,7 @@ function line(f: Figures, show: Show): string[] {
     const size = show.tokens && f.context.tokens !== null && f.context.window !== null
       ? ` (${tokens(f.context.tokens)}/${tokens(f.context.window)})`
       : ''
-    parts.push(`context ${pct}${size}`)
+    parts.push(`Context ${pct}${size}`)
   }
   for (const l of f.limits) {
     if ((l.kind === 'five_hour' && !show.session) || (l.kind === 'seven_day' && !show.weekly)) continue
@@ -159,7 +159,7 @@ function line(f: Figures, show: Show): string[] {
   if (show.models) for (const m of f.models) parts.push(`${m.name} ${m.percentUsed}%`)
   if (show.cost && f.costUsd !== null) parts.push(`$${f.costUsd.toFixed(2)}`)
   if (show.turns && f.turns !== null) parts.push(`${f.turns} ${f.turns === 1 ? 'turn' : 'turns'}`)
-  if (show.duration && f.startedAt !== null) parts.push(`elapsed ${span(f.now - f.startedAt)}`)
+  if (show.duration && f.startedAt !== null) parts.push(`Elapsed ${span(f.now - f.startedAt)}`)
   if (show.clock) parts.push(clock(f.now))
   return parts
 }
