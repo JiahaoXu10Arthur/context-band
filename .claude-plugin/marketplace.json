@@ -1,0 +1,5 @@
+{
+  "name": "jiahaoxu-mods",
+  "owner": { "name": "Jiahao Xu" },
+  "plugins": [{ "name": "context-band", "source": "./" }]
+}

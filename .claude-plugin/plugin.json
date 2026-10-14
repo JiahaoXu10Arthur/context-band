@@ -1,0 +1,7 @@
+{
+  "name": "context-band",
+  "version": "0.1.0",
+  "description": "One line above the prompt: context window fill, plan rate-limit windows and per-model weekly windows",
+  "author": { "name": "Jiahao Xu" },
+  "types": "./types/index.d.ts"
+}
