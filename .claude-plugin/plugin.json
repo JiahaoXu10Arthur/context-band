@@ -1,6 +1,6 @@
 {
   "name": "context-band",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "One line above the prompt: context window fill, plan rate-limit windows, per-model weekly windows and other session figures, each one a toggle in /config",
   "author": { "name": "Jiahao Xu" },
   "types": "./types/index.d.ts",

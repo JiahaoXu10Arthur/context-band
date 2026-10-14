@@ -15,6 +15,7 @@ const figures = atom({ plugin: 'context-band', key: 'figures' } as const, null)
 const LABELS: Record<string, string> = { five_hour: 'Session', seven_day: 'Weekly' }
 const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 const MINUTE = 60_000
+const MODELS_EVERY = 5 * MINUTE
 
 // Every part of the line, in the order it is drawn. Each is a boolean field of
 // the manifest's userConfig: a row in /config, and a screen at install time.
@@ -38,20 +39,35 @@ type UsageBody = {
 
 // Per-model weekly windows come only from the OAuth usage endpoint, as the
 // `limits[]` entries with a model scope; the response headers that feed
-// `rateLimits` carry five_hour and seven_day alone.
-async function modelWindows($: EngineInterface): Promise<Figures['models']> {
+// `rateLimits` carry five_hour and seven_day alone. Null when the request
+// failed (a 429 among them): the caller keeps the reading it has.
+async function modelWindows($: EngineInterface): Promise<Figures['models'] | null> {
   try {
     const auth = await $.session.authorize()
     if (auth === null) return []
     const r = await $.http.fetch(USAGE_URL, { auth: auth.handle })
-    if (!r.ok) return []
+    if (!r.ok) return null
     const body = JSON.parse(r.text) as UsageBody
     return (body.limits ?? []).flatMap(l =>
       l.scope?.model ? [{ name: l.scope.model.display_name, percentUsed: l.percent }] : [],
     )
   } catch {
-    return []
+    return null
   }
+}
+
+// The endpoint is asked at most once per MODELS_EVERY, whatever the answer;
+// between asks, and after a failed one, the last reading stands.
+let modelsAskedAt = -Infinity
+let models: Figures['models'] = []
+
+async function modelWindowsCached($: EngineInterface, now: number): Promise<Figures['models']> {
+  if (now - modelsAskedAt >= MODELS_EVERY) {
+    modelsAskedAt = now
+    const fresh = await modelWindows($)
+    if (fresh !== null) models = fresh
+  }
+  return models
 }
 
 function parentOf(dir: string): string | null {
@@ -92,8 +108,9 @@ type Reading = { context: SessionContextUsage; rateLimits: SessionRateLimit[]; c
 
 async function measure($: EngineInterface, show: Show, u: Reading) {
   const cwd = show.folder || show.branch ? await $.session.cwd() : null
+  const now = await $.clock.now()
   const next: Figures = {
-    now: await $.clock.now(),
+    now,
     startedAt: show.duration ? (await $.session.usage()).startedAt : null,
     context: {
       percent: u.context.percent ?? null,
@@ -101,7 +118,7 @@ async function measure($: EngineInterface, show: Show, u: Reading) {
       window: u.context.window ?? null,
     },
     limits: u.rateLimits.map(r => ({ kind: r.kind, percentUsed: r.percentUsed, resetsAt: r.resetsAt ?? null })),
-    models: show.models ? await modelWindows($) : [],
+    models: show.models ? await modelWindowsCached($, now) : [],
     costUsd: u.cost?.usd ?? null,
     turns: show.turns ? await $.session.turns() : null,
     model: show.model ? await $.session.model() : null,

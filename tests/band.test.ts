@@ -130,3 +130,31 @@ test('with every part off the band leaves the drawing to the engine', { options:
   const ui = await $.ui.mount({ plugin: 'context-band', surface: 'terminal', ...BAND })
   expect((await ui.find({ type: 'Text' }))?.text).toBe('the engine drew this')
 })
+
+test('a failed usage request keeps the last per-model reading, and the endpoint is asked at most once per five minutes', async ($, on) => {
+  const clock = mock.clock(on, { now: NOW })
+  on('session.authorize', () => ({ value: { handle: 'h', kind: 'bearer' } }))
+  on('session.measure', (_$, e) => ({ changed: e.changed }))
+  const answers = [
+    { status: 200, ok: true, headers: {}, text: USAGE },
+    { status: 429, ok: false, headers: {}, text: '{"error":{"type":"rate_limit_error"}}' },
+  ]
+  let calls = 0
+  on('http.fetch', () => ({ value: answers[calls++]! }))
+
+  await $.session.measure(READING)
+  const ui = await $.ui.mount({ plugin: 'context-band', surface: 'desktop', ...BAND })
+  const line = async () => (await ui.find({ type: 'Text' }))?.text
+  expect(await line()).toBe('Context 14% · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35%')
+  expect(calls).toBe(1)
+
+  await clock.advance(5 * 60_000)
+  await $.session.measure(READING)
+  expect(calls).toBe(2)
+  expect(await line()).toBe('Context 14% · Session 17% (2hr 10m) · Weekly 31% (3d 4hr) · Fable 35%')
+
+  await clock.advance(60_000)
+  await $.session.measure(READING)
+  expect(calls).toBe(2)
+  expect(await line()).toBe('Context 14% · Session 17% (2hr 9m) · Weekly 31% (3d 4hr) · Fable 35%')
+})
