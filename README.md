@@ -56,7 +56,7 @@ With every switch off the mod draws nothing. The switches are stored in `~/.clau
 ## Caveats
 
 - Mods use the plugin hooks API, which is early access and may change between Claude Code releases.
-- Per-model windows come from `api.anthropic.com/api/oauth/usage`, an endpoint Claude Code uses internally and does not document. The mod calls it with the session's own credential through `$.session.authorize()` and never sees the token. The mod asks it at most once every five minutes; when a request fails (the endpoint rate-limits with a 429 now and then) the last reading stays on the line. If the endpoint changes, the per-model entry disappears and the rest of the line keeps working. With the per-model switch off the endpoint is not called at all.
+- Per-model windows come from `api.anthropic.com/api/oauth/usage`, an endpoint Claude Code uses internally and does not document. The mod calls it with the session's own credential through `$.session.authorize()` and never sees the token. The mod asks it again five minutes after a reading, or one minute after a failed request (the endpoint rate-limits with a 429 now and then, mostly when several sessions ask at once); in between, the last reading stays on the line. If the endpoint changes, the per-model entry disappears and the rest of the line keeps working. With the per-model switch off the endpoint is not called at all.
 
 ## Develop
 

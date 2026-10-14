@@ -16,6 +16,7 @@ const LABELS: Record<string, string> = { five_hour: 'Session', seven_day: 'Weekl
 const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 const MINUTE = 60_000
 const MODELS_EVERY = 5 * MINUTE
+const MODELS_RETRY = MINUTE
 
 // Every part of the line, in the order it is drawn. Each is a boolean field of
 // the manifest's userConfig: a row in /config, and a screen at install time.
@@ -56,16 +57,16 @@ async function modelWindows($: EngineInterface): Promise<Figures['models'] | nul
   }
 }
 
-// The endpoint is asked at most once per MODELS_EVERY, whatever the answer;
-// between asks, and after a failed one, the last reading stands.
-let modelsAskedAt = -Infinity
+// The endpoint is asked again MODELS_EVERY after a reading, MODELS_RETRY
+// after a failed request; in between the last reading stands.
+let modelsDueAt = -Infinity
 let models: Figures['models'] = []
 
 async function modelWindowsCached($: EngineInterface, now: number): Promise<Figures['models']> {
-  if (now - modelsAskedAt >= MODELS_EVERY) {
-    modelsAskedAt = now
+  if (now >= modelsDueAt) {
     const fresh = await modelWindows($)
     if (fresh !== null) models = fresh
+    modelsDueAt = now + (fresh === null ? MODELS_RETRY : MODELS_EVERY)
   }
   return models
 }
