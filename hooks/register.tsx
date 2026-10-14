@@ -17,6 +17,7 @@ const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 const MINUTE = 60_000
 const MODELS_EVERY = 5 * MINUTE
 const MODELS_RETRY = MINUTE
+const MODELS_SOON = 10_000
 
 // Every part of the line, in the order it is drawn. Each is a boolean field of
 // the manifest's userConfig: a row in /config, and a screen at install time.
@@ -79,15 +80,30 @@ async function modelWindows($: EngineInterface): Promise<Figures['models'] | nul
 }
 
 // The endpoint is asked again MODELS_EVERY after a reading, MODELS_RETRY
-// after a failed request; in between the last reading stands.
+// after a failed request; in between the last reading stands. A failed
+// request is also tried once more MODELS_SOON later, off the clock, so a
+// reload that collides with the engine's own request (a 429) shows the
+// entry within seconds instead of after the next turn.
 let modelsDueAt = -Infinity
 let models: Figures['models'] = []
+let soonRetry = false
 
 async function modelWindowsCached($: EngineInterface, now: number): Promise<Figures['models']> {
   if (now >= modelsDueAt) {
     const fresh = await modelWindows($)
     if (fresh !== null) models = fresh
     modelsDueAt = now + (fresh === null ? MODELS_RETRY : MODELS_EVERY)
+    if (fresh === null && !soonRetry) {
+      soonRetry = true
+      $.clock.after(MODELS_SOON, async () => {
+        soonRetry = false
+        const again = await modelWindows($)
+        if (again === null) return
+        models = again
+        modelsDueAt = (await $.clock.now()) + MODELS_EVERY
+        await update($, figures, f => (f === null ? f : { ...f, models: again }))
+      })
+    }
   }
   return models
 }

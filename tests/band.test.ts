@@ -132,7 +132,7 @@ test('with every part off the band leaves the drawing to the engine', { options:
   expect((await ui.find({ type: 'Text' }))?.text).toBe('the engine drew this')
 })
 
-test('a failed usage request keeps the last per-model reading and is retried after a minute; a good one is asked again after five', async ($, on) => {
+test('a failed usage request keeps the last per-model reading and is tried again ten seconds later, off the clock', async ($, on) => {
   const clock = mock.clock(on, { now: NOW })
   on('session.authorize', () => ({ value: { handle: 'h', kind: 'bearer' } }))
   on('session.measure', (_$, e) => ({ changed: e.changed }))
@@ -150,23 +150,50 @@ test('a failed usage request keeps the last per-model reading and is retried aft
   expect(await line()).toBe('Context 14% · Session 17% (2hr 15m) · Weekly 31% (3d 5hr) · Fable 35% (6d 4hr)')
   expect(calls).toBe(1)
 
+  // Five minutes on, the refresh is refused: the reading stands.
   await clock.advance(5 * 60_000)
   await $.session.measure(READING)
   expect(calls).toBe(2)
   expect(await line()).toBe('Context 14% · Session 17% (2hr 10m) · Weekly 31% (3d 4hr) · Fable 35% (6d 3hr)')
 
-  await clock.advance(30_000)
+  // Ten seconds later the retry runs by itself and redraws the band.
+  await clock.advance(10_000)
+  expect(calls).toBe(3)
+  expect(await line()).toBe('Context 14% · Session 17% (2hr 10m) · Weekly 31% (3d 4hr) · Fable 40% (6d 3hr)')
+
+  // A good reading holds for five minutes: the next turn asks nothing.
+  await clock.advance(60_000)
+  await $.session.measure(READING)
+  expect(calls).toBe(3)
+})
+
+test('when the ten-second retry fails too, the next turn a minute on asks again', async ($, on) => {
+  const clock = mock.clock(on, { now: NOW })
+  on('session.authorize', () => ({ value: { handle: 'h', kind: 'bearer' } }))
+  on('session.measure', (_$, e) => ({ changed: e.changed }))
+  let calls = 0
+  on('http.fetch', () => {
+    calls++
+    return { value: calls <= 2 ? { status: 429, ok: false, headers: {}, text: '{}' } : { status: 200, ok: true, headers: {}, text: USAGE } }
+  })
+
+  await $.session.measure(READING)
+  const ui = await $.ui.mount({ plugin: 'context-band', surface: 'terminal', ...BAND })
+  const line = async () => (await ui.find({ type: 'Text' }))?.text
+  expect(calls).toBe(1)
+  expect(await line()).toBe('Context 14% · Session 17% (2hr 15m) · Weekly 31% (3d 5hr)')
+
+  await clock.advance(10_000)
+  expect(calls).toBe(2)
+
+  await clock.advance(20_000)
   await $.session.measure(READING)
   expect(calls).toBe(2)
 
   await clock.advance(30_000)
   await $.session.measure(READING)
   expect(calls).toBe(3)
-  expect(await line()).toBe('Context 14% · Session 17% (2hr 9m) · Weekly 31% (3d 4hr) · Fable 40% (6d 3hr)')
-
-  await clock.advance(60_000)
-  await $.session.measure(READING)
-  expect(calls).toBe(3)
+  expect(await line()).toBe('Context 14% · Session 17% (2hr 14m) · Weekly 31% (3d 4hr) · Fable 35% (6d 3hr)')
 })
 
 const BUSY: SessionMeasureInput = {
