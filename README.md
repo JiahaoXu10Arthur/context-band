@@ -2,12 +2,12 @@
 
 A Claude Code mod that keeps one dim line above the prompt:
 
-![Context 16% · Session 39% (2hr 33m) · Weekly 36% (6d 3hr) · Fable 40% above the prompt in Claude Code Desktop](docs/band.png)
+![Context 38% · Session 50% (1hr 45m) · Weekly 39% (6d 2hr) · Fable 44% (6d 2hr) above the prompt in Claude Code Desktop](docs/band.png)
 
 Out of the box it shows:
 
 - `Context`: how full the session's context window is
-- `Session` / `Weekly`: the plan's 5-hour and 7-day rate-limit windows, each with the time until it resets, like `Session 39% (2hr 33m)`
+- `Session` / `Weekly`: the plan's 5-hour and 7-day rate-limit windows, each with the time until it resets, like `Session 50% (1hr 45m)`
 - one entry per model-scoped weekly window the account has (`Fable` here), with its reset countdown too
 
 The figures refresh after every turn. With an API key, Bedrock, Vertex or a gateway there are no plan windows, and the line shows `Context` alone.
