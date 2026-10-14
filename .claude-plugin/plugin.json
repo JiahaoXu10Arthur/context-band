@@ -1,7 +1,87 @@
 {
   "name": "context-band",
-  "version": "0.1.0",
-  "description": "One line above the prompt: context window fill, plan rate-limit windows and per-model weekly windows",
+  "version": "0.2.0",
+  "description": "One line above the prompt: context window fill, plan rate-limit windows, per-model weekly windows and other session figures, each one a toggle in /config",
   "author": { "name": "Jiahao Xu" },
-  "types": "./types/index.d.ts"
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "model": {
+      "type": "boolean",
+      "title": "Model name",
+      "description": "The model the session runs on, as /model shows it",
+      "default": false
+    },
+    "folder": {
+      "type": "boolean",
+      "title": "Working folder",
+      "description": "The name of the session's working directory",
+      "default": false
+    },
+    "branch": {
+      "type": "boolean",
+      "title": "Git branch",
+      "description": "The branch checked out in the working directory, when it is inside a git repository",
+      "default": false
+    },
+    "context": {
+      "type": "boolean",
+      "title": "Context window fill",
+      "description": "How full the context window is, as a percentage",
+      "default": true
+    },
+    "tokens": {
+      "type": "boolean",
+      "title": "Context tokens",
+      "description": "Tokens used over the window size beside the context percentage, like 54k/200k",
+      "default": false
+    },
+    "session": {
+      "type": "boolean",
+      "title": "5-hour window",
+      "description": "The plan's 5-hour rate-limit window (subscriptions only)",
+      "default": true
+    },
+    "weekly": {
+      "type": "boolean",
+      "title": "7-day window",
+      "description": "The plan's 7-day rate-limit window (subscriptions only)",
+      "default": true
+    },
+    "resets": {
+      "type": "boolean",
+      "title": "Reset countdowns",
+      "description": "Time until each rate-limit window resets, like (2h15m), after its percentage",
+      "default": true
+    },
+    "models": {
+      "type": "boolean",
+      "title": "Per-model windows",
+      "description": "One entry per model-scoped weekly window the account has, like Fable 36%",
+      "default": true
+    },
+    "cost": {
+      "type": "boolean",
+      "title": "Session cost",
+      "description": "What the session has cost so far in US dollars, as /cost totals it",
+      "default": false
+    },
+    "turns": {
+      "type": "boolean",
+      "title": "Turn count",
+      "description": "How many prompts have been sent this session",
+      "default": false
+    },
+    "duration": {
+      "type": "boolean",
+      "title": "Session duration",
+      "description": "Time since the session started, refreshed every minute",
+      "default": false
+    },
+    "clock": {
+      "type": "boolean",
+      "title": "Clock",
+      "description": "The current time as HH:MM, refreshed every minute",
+      "default": false
+    }
+  }
 }
