@@ -7,7 +7,7 @@ A Claude Code mod that keeps one dim line above the prompt:
 Out of the box it shows:
 
 - `context`: how full the session's context window is
-- `session` / `weekly`: the plan's 5-hour and 7-day rate-limit windows, each with the time until it resets, like `session 25% (2h15m)`
+- `session` / `weekly`: the plan's 5-hour and 7-day rate-limit windows, each with the time until it resets, like `session 25% (2hr 15m)`
 - one entry per model-scoped weekly window the account has (`Fable` here)
 
 The figures refresh after every turn. With an API key, Bedrock, Vertex or a gateway there are no plan windows, and the line shows `context` alone.
@@ -44,11 +44,11 @@ Every part of the line is a switch. Open `/config` and look for the rows under `
 | Context tokens | `(54k/200k)` after the context percentage | off |
 | 5-hour window | `session 25%` | on |
 | 7-day window | `weekly 33%` | on |
-| Reset countdowns | `(2h15m)` after each window | on |
+| Reset countdowns | `(2hr 15m)` after each window | on |
 | Per-model windows | `Fable 36%`, one per model-scoped window | on |
 | Session cost | `$1.23`, as `/cost` totals it | off |
 | Turn count | `12 turns` | off |
-| Session duration | `elapsed 1h15m`, refreshed every minute | off |
+| Session duration | `elapsed 1hr 15m`, refreshed every minute | off |
 | Clock | `22:30`, refreshed every minute | off |
 
 With every switch off the mod draws nothing. The switches are stored in `~/.claude/settings.json` under `pluginConfigs`, so they can be edited there too.

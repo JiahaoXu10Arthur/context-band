@@ -41,7 +41,7 @@ test('by default the band shows context, plan windows with their resets, and per
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ plugin: 'context-band', surface, ...BAND })
     const line = await ui.find({ type: 'Text' })
-    expect(line?.text).toBe('context 14% · session 17% (2h15m) · weekly 31% (3d5h) · Fable 35%')
+    expect(line?.text).toBe('context 14% · session 17% (2hr 15m) · weekly 31% (3d 5hr) · Fable 35%')
     await ui.unmount()
   }
 })
@@ -86,7 +86,7 @@ test('with every part on the band shows them all in order', { options: ALL_ON },
 
   const ui = await $.ui.mount({ plugin: 'context-band', surface: 'terminal', ...BAND })
   expect((await ui.find({ type: 'Text' }))?.text).toBe(
-    'Fable 5.1 · context-band (main) · context 14% (140k/1M) · session 17% (2h15m) · weekly 31% (3d5h) · Fable 35% · $1.23 · 12 turns · elapsed 1h15m · 22:30',
+    'Fable 5.1 · context-band (main) · context 14% (140k/1M) · session 17% (2hr 15m) · weekly 31% (3d 5hr) · Fable 35% · $1.23 · 12 turns · elapsed 1hr 15m · 22:30',
   )
 })
 

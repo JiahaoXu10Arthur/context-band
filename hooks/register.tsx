@@ -116,10 +116,10 @@ function span(ms: number): string {
   if (mins < 60) return `${mins}m`
   const h = Math.floor(mins / 60)
   const m = mins % 60
-  if (h < 24) return m ? `${h}h${m}m` : `${h}h`
+  if (h < 24) return m ? `${h}hr ${m}m` : `${h}hr`
   const d = Math.floor(h / 24)
   const hh = h % 24
-  return hh ? `${d}d${hh}h` : `${d}d`
+  return hh ? `${d}d ${hh}hr` : `${d}d`
 }
 
 function until(resetsAt: string | null, now: number): string | null {

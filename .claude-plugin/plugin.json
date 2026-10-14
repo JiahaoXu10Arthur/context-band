@@ -50,7 +50,7 @@
     "resets": {
       "type": "boolean",
       "title": "Reset countdowns",
-      "description": "Time until each rate-limit window resets, like (2h15m), after its percentage",
+      "description": "Time until each rate-limit window resets, like (2hr 15m), after its percentage",
       "default": true
     },
     "models": {
