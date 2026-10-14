@@ -2,9 +2,7 @@
 
 A Claude Code mod that keeps one dim line above the prompt:
 
-```
-context 14% · session 17% · weekly 31% · Fable 35%
-```
+![context 27% · session 25% · weekly 33% · Fable 36% above the prompt in Claude Code Desktop](docs/band.png)
 
 - `context`: how full the session's context window is
 - `session` / `weekly`: the plan's 5-hour and 7-day rate-limit windows
@@ -14,13 +12,22 @@ The figures refresh after every turn. With an API key, Bedrock, Vertex or a gate
 
 ## Install
 
-In a terminal session of Claude Code:
+Either way the mod is installed at user scope and loads in every later session, including the ones Claude Code Desktop starts.
 
-```
-/plugin install context-band --marketplace JiahaoXu10Arthur/context-band
-```
+1. In a terminal session of Claude Code (the command is not available inside a Desktop session):
 
-Answer `y` to add the marketplace, then pick the user scope. The mod loads in every later session, including the ones Claude Code Desktop starts. The command is a terminal's: a Desktop session answers that it is not available there.
+   ```
+   /plugin install context-band --marketplace JiahaoXu10Arthur/context-band
+   ```
+
+   Answer `y` to add the marketplace, then pick the user scope.
+
+2. Or paste this repo's link into any Claude Code session, Desktop included, and ask Claude to install it. It runs:
+
+   ```
+   claude plugin marketplace add JiahaoXu10Arthur/context-band
+   claude plugin install context-band@jiahaoxu-mods
+   ```
 
 ## Caveats
 
