@@ -70,7 +70,7 @@ The colors `subtle`, `text`, `claude`, `warning` and `error` are theme keys and 
 ## Caveats
 
 - Mods use the plugin hooks API, which is early access and may change between Claude Code releases.
-- Per-model windows come from `api.anthropic.com/api/oauth/usage`, an endpoint Claude Code uses internally and does not document. The mod calls it with the session's own credential through `$.session.authorize()` and never sees the token. The mod asks it again five minutes after a reading. A failed request (the endpoint rate-limits with a 429 now and then, mostly when a reload makes several requests at once) is tried once more ten seconds later, and after that a minute later; in between, the last reading stays on the line. If the endpoint changes, the per-model entry disappears and the rest of the line keeps working. With the per-model switch off the endpoint is not called at all.
+- Per-model windows come from `api.anthropic.com/api/oauth/usage`, an endpoint Claude Code uses internally and does not document. The mod calls it with the session's own credential through `$.session.authorize()` and never sees the token. The mod asks it again five minutes after a reading. A failed request is tried once more ten seconds later, and after that once a minute; in between, the last reading stays on the line. The endpoint answers 429 now and then, mostly when a reload makes several requests at once, and once it does it can keep refusing for a while (seventeen minutes, one evening of heavy testing with several sessions open): the per-model entry is missing until then and comes back by itself. If the endpoint changes, the per-model entry disappears and the rest of the line keeps working. With the per-model switch off the endpoint is not called at all.
 
 ## Develop
 
